@@ -1,0 +1,74 @@
+// #include <MAX30100.h>
+
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_MAX30100.h>
+#include <LiquidCrystal_I2C.h>
+
+// Pin configurations for the I2C LCD display
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// Pin configuration for the LM35 temperature sensor
+const int lm35Pin = A0;
+
+// MAX30100 sensor object
+Adafruit_MAX30100 max30100;
+
+void setup() {
+  Serial.begin(9600);
+
+  // Initialize the I2C LCD display
+  lcd.init();
+  lcd.backlight();
+
+  // Initialize the MAX30100 sensor
+  if (!max30100.begin()) {
+    Serial.println("Error: Could not find a valid MAX30100 sensor, check wiring!");
+    while (1);
+  }
+}
+
+void loop() {
+  // Read temperature from LM35 sensor
+  float temperature = getTemperature();
+
+  // Read heart rate and SpO2 from MAX30100 sensor
+  float heartRate = getHeartRate();
+  float spo2 = getSpO2();
+
+  // Display data on the LCD
+  displayData(temperature, heartRate, spo2);
+
+  // Delay for a moment before updating again
+  delay(1000);
+}
+
+float getTemperature() {
+  int sensorValue = analogRead(lm35Pin);
+  float voltage = sensorValue * (5.0 / 1023.0);
+  float temperatureC = (voltage - 0.5) * 100.0;
+  return temperatureC;
+}
+
+float getHeartRate() {
+  return max30100.getHeartRate();
+}
+
+float getSpO2() {
+  return max30100.getSpO2();
+}
+
+void displayData(float temperature, float heartRate, float spo2) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Temp: ");
+  lcd.print(temperature);
+  lcd.print("C");
+
+  lcd.setCursor(0, 1);
+  lcd.print("HR: ");
+  lcd.print(heartRate);
+  lcd.print(" bpm SpO2: ");
+  lcd.print(spo2);
+  lcd.print("%");
+}
